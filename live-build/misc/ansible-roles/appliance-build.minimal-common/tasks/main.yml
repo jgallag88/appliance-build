@@ -98,6 +98,7 @@
     home: "/export/home/{{ lookup('env', 'APPLIANCE_USERNAME') }}"
     password:
       "{{ lookup('env', 'APPLIANCE_PASSWORD') | password_hash('sha512') }}"
+    uid: 65433
   no_log: true
 
 #
