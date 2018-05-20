@@ -49,3 +49,11 @@
     recurse: yes
   with_items:
     - dms-core-gate
+
+- file:
+    path: "/etc/systemd/system/delphix-masking.service.d/"
+    state: directory
+
+- copy:
+    dest: "/etc/systemd/system/delphix-masking.service.d/debug.conf"
+    content: "[Service]\nEnvironment=MASK_DEBUG=true\n"
