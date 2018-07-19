@@ -361,3 +361,9 @@
     path: /etc/default/grub.d/kdump-tools.cfg
     regexp: '^GRUB_CMDLINE_LINUX_DEFAULT='
     line: 'GRUB_CMDLINE_LINUX_DEFAULT="$GRUB_CMDLINE_LINUX_DEFAULT crashkernel=1024M-:512M"'
+
+# Panic on ZFS assertion failures
+- lineinfile:
+    path: /etc/modprobe.d/zfs.conf
+    create: yes
+    line: 'options spl spl_panic_halt=1'
