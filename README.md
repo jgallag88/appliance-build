@@ -20,9 +20,9 @@ Log into that VM using the "ubuntu" user, and run these commands:
     $ git clone https://github.com/delphix/appliance-build.git
     $ cd appliance-build
     $ ansible-playbook bootstrap/playbook.yml
-    $ ./scripts/docker-run.sh make internal-minimal
+    $ HYPERVISORS=generic ./scripts/docker-run.sh make internal-minimal
     $ sudo qemu-system-x86_64 -nographic -m 1G \
-    > -drive file=live-build/artifacts/internal-minimal.qcow2
+    > -drive file=artifacts/internal-minimal-generic.qcow2
 
 To exit "qemu", use "Ctrl-A X".
 
@@ -122,17 +122,24 @@ applied according to playbooks in per variant directories under
 live-build/variants. A specific variant can be built by passing in the
 variant's name:
 
-    $ ./scripts/docker-run.sh make internal-minimal
+    $ HYPERVISORS=generic ./scripts/docker-run.sh make internal-minimal
+
+Note that by modifying the 'HYPERVISORS' environment variable, it is
+possible to build an appliance with a kernel optimized for a different
+hypervisor. The appliance will also contain kernel modules built for
+that optimized kernel, and perhaps some other modules relevant to that
+hypervisor only.
 
 When this completes, the newly built VM artifacts will be contained in
-the "live-build/artifacts" directory:
+the "artifacts/" directory:
 
-    $ ls -l live-build/artifacts
-    total 6.0G
-    -rw-r--r-- 1 root root  975M Apr 30 19:47 internal-minimal.ova
-    -rw-r--r-- 1 root root 1009M Apr 30 19:43 internal-minimal.qcow2
-    -rw-r--r-- 1 root root  2.8G Apr 30 19:44 internal-minimal.vhdx
-    -rw-r--r-- 1 root root  975M Apr 30 19:47 internal-minimal.vmdk
+    $ ls -lh artifacts/
+    total 3.0G
+    -rw-r--r-- 1 root root   45 Dec  5 22:39 internal-minimal-generic.migration.tar.gz
+    -rw-r--r-- 1 root root 874M Dec  5 22:38 internal-minimal-generic.ova
+    -rw-r--r-- 1 root root 908M Dec  5 22:39 internal-minimal-generic.qcow2
+    -rw-r--r-- 1 root root 874M Dec  5 22:38 internal-minimal-generic.vmdk
+    -rw-r--r-- 1 root root 374M Dec  5 22:38 internal-minimal.upgrade.tar.gz
 
 ### Step 5: Use QEMU for Boot Verfication
 
@@ -140,13 +147,14 @@ Once the live-build artifacts have been generated, we can then leverage
 the "qemu" tool to test the "qcow2" artifact:
 
     $ sudo qemu-system-x86_64 -nographic -m 1G \
-    > -drive file=live-build/artifacts/internal-minimal.qcow2
+    > -drive file=artifacts/internal-minimal-generic.qcow2
 
 This will attempt to boot the "qcow2" VM image, minimally verifying that
 any changes to the build don't cause a boot failure. Further, after the
 image boots (assuming it boots successfully), one can log in via the
-console and perform any post-boot verification that's required (e.g.
-verify certain packages are installed, etc).
+console (username and password are both 'delphix') and perform any
+post-boot verification that's required (e.g. verify certain packages are
+installed, etc).
 
 To exit "qemu", one can use "Ctrl-A X".
 

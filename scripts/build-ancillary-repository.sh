@@ -78,7 +78,7 @@ function download_delphix_s3_debs() {
 	local S3_URI="$2"
 	local tmp_directory
 
-	tmp_directory=$(mktemp -d -p "$PWD" tmp.s3-debs.XXXXXXXXXX)
+	tmp_directory=$(mktemp -d -p "$TOP/build" tmp.s3-debs.XXXXXXXXXX)
 	pushd "$tmp_directory" &>/dev/null
 
 	aws s3 sync --only-show-errors "$S3_URI" .
@@ -98,7 +98,7 @@ function build_delphix_java8_debs() {
 	local debfile="oracle-java8-jdk_8u171_amd64.deb"
 	local tmp_directory
 
-	tmp_directory=$(mktemp -d -p "$PWD" tmp.java.XXXXXXXXXX)
+	tmp_directory=$(mktemp -d -p "$TOP/build" tmp.java.XXXXXXXXXX)
 	pushd "$tmp_directory" &>/dev/null
 
 	wget -nv "$url/java-binaries/linux/jdk/8/$tarfile" -O "$tarfile"
@@ -202,7 +202,8 @@ AWS_S3_URI_ZFS=$(resolve_s3_uri \
 # that we can later point Aptly at this directory to build the Aptly/APT
 # repository.
 #
-PKG_DIRECTORY=$(mktemp -d -p "$PWD" tmp.pkgs.XXXXXXXXXX)
+mkdir -p "$TOP/build"
+PKG_DIRECTORY=$(mktemp -d -p "$TOP/build" tmp.pkgs.XXXXXXXXXX)
 
 #
 # Now that we've determined the URI of all first-party packages, we can

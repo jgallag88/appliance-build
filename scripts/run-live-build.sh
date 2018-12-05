@@ -28,12 +28,8 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 if [[ $# -ne 1 ]]; then
-	echo "Must specify a single live-build variant to run." 1>&2
-	exit 1
-fi
-
-if [[ "$1" != "base" ]] && [[ ! -d "live-build/variants/$1" ]]; then
-	echo "Invalid live-build variant specified: $1" 1>&2
+	echo "Must specify a single image to build (e.g. " \
+		"'internal-minimal-generic')." 1>&2
 	exit 1
 fi
 
@@ -53,13 +49,30 @@ export APPLIANCE_PASSWORD="${APPLIANCE_PASSWORD:-delphix}"
 #
 set -o xtrace
 
-if [[ "$1" == "base" ]]; then
-	export APPLIANCE_VARIANT="base"
-	cd "$TOP/live-build/base"
-else
-	export APPLIANCE_VARIANT="$1"
-	cd "$TOP/live-build/variants/$1"
+export APPLIANCE_VARIANT="${1%-*}"
+export APPLIANCE_HYPERVISOR="${1##*-}"
+export ARTIFACT_NAME="$APPLIANCE_VARIANT-$APPLIANCE_HYPERVISOR"
+
+if [[ ! -d "live-build/variants/$APPLIANCE_VARIANT" ]]; then
+	echo "Invalid live-build variant specified: $1" 1>&2
+	exit 1
 fi
+
+# Set up live-build environment
+build_dir="$TOP/live-build/build/$ARTIFACT_NAME"
+rm -rf "$build_dir"
+mkdir -p "$build_dir"
+
+cp -r "$TOP/live-build/auto" "$build_dir"
+cp -r "$TOP/live-build/config" "$build_dir"
+cp -r "$TOP/live-build/variants/$APPLIANCE_VARIANT/ansible" "$build_dir"
+cp -r "$TOP/live-build/misc/migration-scripts" "$build_dir"
+
+cd "$build_dir"
+
+sed "s/@@HYPERVISOR@@/$APPLIANCE_HYPERVISOR/" \
+	<config/package-lists/delphix-platform.list.chroot.in \
+	>config/package-lists/delphix-platform.list.chroot
 
 #
 # The ancillary repository contains all of the first-party Delphix
@@ -88,7 +101,7 @@ while ! curl --output /dev/null --silent --head --fail \
 done
 set -o errexit
 
-lb config
+lb config --linux-flavour "$APPLIANCE_HYPERVISOR"
 lb build
 
 kill -9 $APTLY_SERVE_PID
@@ -108,22 +121,14 @@ if [[ ! -f binary/SHA256SUMS ]]; then
 fi
 
 #
-# The base variant doesn't produce any virtual machine artifacts, so we
-# need to avoid the "mv" calls below.
-#
-if [[ "$APPLIANCE_VARIANT" == "base" ]]; then
-	exit 0
-fi
-
-#
 # After running the build successfully, it should have produced various
 # virtual machine artifacts. We move these artifacts into a specific
 # directory to make it easy for the artifacts to be consumed by the
 # user (e.g. other software); this is most useful when multiple variants
 # are built via a single call to "make" (e.g. using the "all" target).
 #
-for ext in ova qcow2 upgrade.tar.gz migration.tar.gz gcp.tar.gz vhdx vmdk; do
-	if [[ -f "$APPLIANCE_VARIANT.$ext" ]]; then
-		mv "$APPLIANCE_VARIANT.$ext" "$TOP/live-build/artifacts"
+for ext in ova qcow2 debs.tar.gz migration.tar.gz gcp.tar.gz vhdx vmdk; do
+	if [[ -f "$ARTIFACT_NAME.$ext" ]]; then
+		mv "$ARTIFACT_NAME.$ext" "$TOP/live-build/artifacts/"
 	fi
 done
