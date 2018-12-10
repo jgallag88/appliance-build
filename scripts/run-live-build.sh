@@ -50,8 +50,8 @@ export APPLIANCE_PASSWORD="${APPLIANCE_PASSWORD:-delphix}"
 set -o xtrace
 
 export APPLIANCE_VARIANT="${1%-*}"
-export APPLIANCE_HYPERVISOR="${1##*-}"
-export ARTIFACT_NAME="$APPLIANCE_VARIANT-$APPLIANCE_HYPERVISOR"
+export APPLIANCE_PLATFORM="${1##*-}"
+export ARTIFACT_NAME="$APPLIANCE_VARIANT-$APPLIANCE_PLATFORM"
 
 if [[ ! -d "live-build/variants/$APPLIANCE_VARIANT" ]]; then
 	echo "Invalid live-build variant specified: $1" 1>&2
@@ -70,7 +70,7 @@ cp -r "$TOP/live-build/misc/migration-scripts" "$build_dir"
 
 cd "$build_dir"
 
-sed "s/@@HYPERVISOR@@/$APPLIANCE_HYPERVISOR/" \
+sed "s/@@PLATFORM@@/$APPLIANCE_PLATFORM/" \
 	<config/package-lists/delphix-platform.list.chroot.in \
 	>config/package-lists/delphix-platform.list.chroot
 
@@ -101,7 +101,7 @@ while ! curl --output /dev/null --silent --head --fail \
 done
 set -o errexit
 
-lb config --linux-flavour "$APPLIANCE_HYPERVISOR"
+lb config
 lb build
 
 kill -9 $APTLY_SERVE_PID

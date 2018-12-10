@@ -20,7 +20,7 @@ Log into that VM using the "ubuntu" user, and run these commands:
     $ git clone https://github.com/delphix/appliance-build.git
     $ cd appliance-build
     $ ansible-playbook bootstrap/playbook.yml
-    $ HYPERVISORS=generic ./scripts/docker-run.sh make internal-minimal
+    $ PLATFORMS=kvm ./scripts/docker-run.sh make internal-minimal
     $ sudo qemu-system-x86_64 -nographic -m 1G \
     > -drive file=artifacts/internal-minimal-generic.qcow2
 
@@ -122,13 +122,13 @@ applied according to playbooks in per variant directories under
 live-build/variants. A specific variant can be built by passing in the
 variant's name:
 
-    $ HYPERVISORS=generic ./scripts/docker-run.sh make internal-minimal
+    $ PLATFORMS=kvm ./scripts/docker-run.sh make internal-minimal
 
-Note that by modifying the 'HYPERVISORS' environment variable, it is
+Note that by modifying the 'PLATFORMS' environment variable, it is
 possible to build an appliance with a kernel optimized for a different
-hypervisor. The appliance will also contain kernel modules built for
+platform. The appliance will also contain kernel modules built for
 that optimized kernel, and perhaps some other modules relevant to that
-hypervisor only.
+platform only.
 
 When this completes, the newly built VM artifacts will be contained in
 the "artifacts/" directory:

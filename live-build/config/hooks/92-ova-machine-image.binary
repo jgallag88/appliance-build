@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-[[ "$APPLIANCE_HYPERVISOR" == generic ]] || exit 0
+[[ "$APPLIANCE_PLATFORM" == esx ]] || exit 0
 
 #
 # This script is intended to be used as part of Delphix's build process.

@@ -18,8 +18,8 @@
 #
 # This script is intended to be used as part of Delphix's build process.
 # Its role is to generate a tar archive that contains all of the debian
-# packages that exist on the build for this hypervisor. The collection
-# of packages for each hypervisor will eventually be merged to create a
+# packages that exist on the build for this platform. The collection
+# of packages for each platform will eventually be merged to create a
 # single upgrade image; see scripts/build-upgrade-image.sh for details.
 #
 
@@ -117,7 +117,7 @@ fi
 sed -i "s/@@DEPENDS@@/$DEPENDS/" delphix-entire.ctl
 sed -i "s/@@VARIANT@@/$APPLIANCE_VARIANT/" delphix-entire.ctl
 sed -i "s/@@VERSION@@/$VERSION/" delphix-entire.ctl
-sed -i "s/@@HYPERVISOR@@/$APPLIANCE_HYPERVISOR/" delphix-entire.ctl
+sed -i "s/@@PLATFORM@@/$APPLIANCE_PLATFORM/" delphix-entire.ctl
 
 equivs-build delphix-entire.ctl
 

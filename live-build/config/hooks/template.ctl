@@ -3,7 +3,7 @@ Priority: optional
 Maintainer: Delphix Engineering <eng@delphix.com>
 Standards-Version: 3.9.2
 
-Package: delphix-entire-@@HYPERVISOR@@
+Package: delphix-entire-@@PLATFORM@@
 Version: @@VERSION@@
 Depends: @@DEPENDS@@
 Description: Entirety of Delphix Appliance (@@VARIANT@@)

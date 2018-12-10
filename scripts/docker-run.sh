@@ -56,7 +56,7 @@ $DOCKER_RUN --rm \
 	--env AWS_SECRET_ACCESS_KEY \
 	--env DELPHIX_SIGNATURE_URL \
 	--env DELPHIX_SIGNATURE_TOKEN \
-	--env HYPERVISORS \
+	--env PLATFORMS \
 	--env AWS_S3_URI_LIVEBUILD_ARTIFACTS \
 	--volume "$TOP:/opt/appliance-build" \
 	--workdir "/opt/appliance-build" \

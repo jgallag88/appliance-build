@@ -21,7 +21,8 @@
 # assumed to be a "raw" disk image, into a VMDK formated disk image.
 #
 
-[[ "$APPLIANCE_HYPERVISOR" == generic ]] || [[ "$APPLIANCE_HYPERVISOR" == aws ]] || exit 0
+[[ "$APPLIANCE_PLATFORM" == esx ]] || [[ "$APPLIANCE_PLATFORM" == aws ]] ||
+	exit 0
 
 source /usr/share/livecd-rootfs/live-build/functions
 

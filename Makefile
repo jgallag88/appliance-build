@@ -20,7 +20,7 @@ ALL_VARIANTS = $(shell find live-build/variants -maxdepth 1 -mindepth 1 -exec ba
 ALL_INTERNAL = $(shell find live-build/variants -maxdepth 1 -mindepth 1 -name 'internal-*' -exec basename {} \;)
 ALL_EXTERNAL = $(shell find live-build/variants -maxdepth 1 -mindepth 1 -name 'external-*' -exec basename {} \;)
 
-ALL_HYPERVISORS := generic aws azure gcp kvm
+ALL_PLATFORMS := aws azure esx gcp kvm
 
 FINDEXEC.Darwin := -perm +111
 FINDEXEC.Linux := -executable
@@ -33,8 +33,8 @@ SHELL_CHECKSTYLE_FILES = $(shell find scripts -type f $(FINDEXEC)) \
 
 VM_ARTIFACTS.aws := vmdk
 VM_ARTIFACTS.azure := vhdx
+VM_ARTIFACTS.esx := ova
 VM_ARTIFACTS.gcp := gcp.tar.gz
-VM_ARTIFACTS.generic := ova qcow2 vmdk
 VM_ARTIFACTS.kvm := qcow2
 
 .PHONY: \
@@ -84,29 +84,29 @@ $(addprefix %.,$(ALL_ARTIFACTS)): ancillary-repository $(LIVE_BUILD_DEPENDS) \
 
 define STAGE1_RULE
 variant:=$(strip $(1))
-hypervisor:=$(strip $(2))
-.PHONY: $(variant)-$(hypervisor)
-$(variant)-$(hypervisor): $(foreach vm_artifact, \
-		$(NON_VM_ARTIFACTS) $(VM_ARTIFACTS.$(hypervisor)), \
-		live-build/artifacts/$(variant)-$(hypervisor).$(vm_artifact))
+platform:=$(strip $(2))
+.PHONY: $(variant)-$(platform)
+$(variant)-$(platform): $(foreach vm_artifact, \
+		$(NON_VM_ARTIFACTS) $(VM_ARTIFACTS.$(platform)), \
+		live-build/artifacts/$(variant)-$(platform).$(vm_artifact))
 	@echo "Built dependencies of $$@: $$^"
 endef
 
 #  Produces rules for targets internal-dev-generic, external-standard-aws, etc
 $(foreach variant,$(ALL_VARIANTS), \
-	$(foreach hypervisor,$(ALL_HYPERVISORS), \
-	$(eval $(call STAGE1_RULE, $(variant), $(hypervisor)))))
+	$(foreach platform,$(ALL_PLATFORMS), \
+	$(eval $(call STAGE1_RULE, $(variant), $(platform)))))
 
 #
 # In order to build the second stage (which consists mainly of creating an
-# upgrade image), we need either AWS_S3_URI_LIVEBUILD_ARTIFACTS or HYPERVISORS
+# upgrade image), we need either AWS_S3_URI_LIVEBUILD_ARTIFACTS or PLATFORMS
 # to be set in order to determine how we should obtain the necessary artifacts
 # produced by live build. We don't want to enforce that one of these environment
 # vars is set until the rule runs, because it should be possible to run other
 # rules without them set. The check runs after the prerequisites have been built
 # because it is part of the recipe. However, when the check is actually needed,
 # nothing of interest will happen when executing prerequisites because
-# HYPERVISORS is empty. Thus this check will be essentially the first thing
+# PLATFORMS is empty. Thus this check will be essentially the first thing
 # done, which is what we want.
 #
 define STAGE2_RULE
@@ -114,13 +114,13 @@ variant:=$(strip $(1))
 .PHONY: $(variant)
 $(variant): $(if $(AWS_S3_URI_LIVEBUILD_ARTIFACTS), \
 		fetch-livebuild-artifacts, \
-		$(foreach hypervisor,$(HYPERVISORS),$(variant)-$(hypervisor))) \
+		$(foreach platform,$(PLATFORMS),$(variant)-$(platform))) \
 		| artifacts
-	@[[ -n $$$$AWS_S3_URI_LIVEBUILD_ARTIFACTS || -n $$$$HYPERVISORS ]] || \
+	@[[ -n $$$$AWS_S3_URI_LIVEBUILD_ARTIFACTS || -n $$$$PLATFORMS ]] || \
 		{ echo "Either 'AWS_S3_URI_LIVEBUILD_ARTIFACTS' or" \
-		"'HYPERVISORS' must be defined as an environment variable." \
-		"Re-run with HYPERVISORS set to a space-delimited list of" \
-		"hypervisors for which to build (e.g 'HYPERVISORS=\"generic" \
+		"'PLATFORMS' must be defined as an environment variable." \
+		"Re-run with PLATFORMS set to a space-delimited list of" \
+		"platforms for which to build (e.g 'PLATFORMS=\"generic" \
 		"aws kvm\" make ...') or with AWS_S3_URI_LIVEBUILD_ARTIFACTS" \
 		"set to a space-delimited set of S3 URIs from which to fetch" \
 		"previously built live-build artifacts."; exit 1; }
@@ -136,7 +136,7 @@ endef
 # Produces rules for each variant. This will move the relevant artifacts
 # produced by live-build into artifacts/ and create a single upgrade image per
 # variant, consisting of all the packages needed to upgrade any of the
-# hypervisor versions for that variant.
+# platform versions for that variant.
 #
 $(foreach variant, $(ALL_VARIANTS), \
     $(eval $(call STAGE2_RULE, $(variant))))

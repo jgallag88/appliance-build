@@ -22,7 +22,7 @@
 # format.
 #
 
-[[ "$APPLIANCE_HYPERVISOR" == gcp ]] || exit 0
+[[ "$APPLIANCE_PLATFORM" == gcp ]] || exit 0
 
 #
 # Google cloud only accepts gzip-ed tarballs with a single "disk.raw"
