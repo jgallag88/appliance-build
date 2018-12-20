@@ -16,11 +16,12 @@
 #
 
 #
-# This script script downloads previously built vm artifacts from S3
-# and places them in live-build/artifacts/ as if they had been built by
-# running by running 'make internal-dev-aws', etc. This allows us to
-# split up the live-build stage of the build between a number of
-# machines, using parallelism to reduce build time.
+# This script downloads previously built vm artifacts from S3 and places
+# them in live-build/build/artifacts/ as if they had been built by running
+# by running 'gradle buildInternalDevAws', etc. This allows us to split up
+# the live-build stage of the build between a number of machines, using
+# parallelism to reduce build time, and then gather the artifacts for the
+# stage where we build the upgrade image.
 #
 
 set -o xtrace
@@ -39,14 +40,14 @@ function fetch_artifacts() {
 	sha256sum -c --strict SHA256SUMS
 	rm SHA256SUMS
 
-	mv ./* "$TOP/live-build/artifacts/"
+	mv ./* "$TOP/live-build/build/artifacts/"
 
 	popd &>/dev/null
 	rm -rf "$tmp_dir"
 }
 
 if [[ -z "$TOP" ]]; then
-	echo "Must be run inside the git repsitory." 2>&1
+	echo "Must be run inside the git repository." 2>&1
 	exit 1
 fi
 

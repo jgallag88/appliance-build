@@ -27,9 +27,9 @@ if [[ $EUID -ne 0 ]]; then
 	exit 1
 fi
 
-if [[ $# -ne 1 ]]; then
-	echo "Must specify a single image to build (e.g. " \
-		"'internal-minimal-generic')." 1>&2
+if [[ $# -ne 2 ]]; then
+	echo "Must specify a single variant and a single platfom " \
+		"(e.g. 'internal-minimal esx')." 1>&2
 	exit 1
 fi
 
@@ -49,11 +49,11 @@ export APPLIANCE_PASSWORD="${APPLIANCE_PASSWORD:-delphix}"
 #
 set -o xtrace
 
-export APPLIANCE_VARIANT="${1%-*}"
-export APPLIANCE_PLATFORM="${1##*-}"
+export APPLIANCE_VARIANT="$1"
+export APPLIANCE_PLATFORM="$2"
 export ARTIFACT_NAME="$APPLIANCE_VARIANT-$APPLIANCE_PLATFORM"
 
-if [[ ! -d "live-build/variants/$APPLIANCE_VARIANT" ]]; then
+if [[ ! -d "$TOP/live-build/variants/$APPLIANCE_VARIANT" ]]; then
 	echo "Invalid live-build variant specified: $1" 1>&2
 	exit 1
 fi
@@ -79,7 +79,7 @@ sed "s/@@PLATFORM@@/$APPLIANCE_PLATFORM/" \
 # packages that are required for live-build to operate properly.
 #
 
-aptly serve -config="$TOP/ancillary-repository/aptly.config" &
+aptly serve -config="$TOP/live-build/build/ancillary-repository/aptly.config" &
 APTLY_SERVE_PID=$!
 
 #
@@ -129,6 +129,6 @@ fi
 #
 for ext in ova qcow2 debs.tar.gz migration.tar.gz gcp.tar.gz vhdx vmdk; do
 	if [[ -f "$ARTIFACT_NAME.$ext" ]]; then
-		mv "$ARTIFACT_NAME.$ext" "$TOP/live-build/artifacts/"
+		mv "$ARTIFACT_NAME.$ext" "$TOP/live-build/build/artifacts/"
 	fi
 done

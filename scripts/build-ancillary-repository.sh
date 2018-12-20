@@ -40,6 +40,8 @@ set -o xtrace
 set -o errexit
 set -o pipefail
 
+OUTPUT_DIR=$TOP/live-build/build/ancillary-repository
+
 function resolve_s3_uri() {
 	local pkg_uri="$1"
 	local pkg_prefix="$2"
@@ -137,11 +139,12 @@ function build_ancillary_repository() {
 	aptly repo add ancillary-repository "$pkg_directory"
 	aptly publish repo -skip-signing ancillary-repository
 
-	rm -rf "$TOP/ancillary-repository"
-	mv "$HOME/.aptly" "$TOP/ancillary-repository"
-	cat >"$TOP/ancillary-repository/aptly.config" <<-EOF
+	mkdir -p "$OUTPUT_DIR/.."
+	rm -rf "$OUTPUT_DIR"
+	mv "$HOME/.aptly" "$OUTPUT_DIR"
+	cat >"$OUTPUT_DIR/aptly.config" <<-EOF
 		{
-		    "rootDir": "$TOP/ancillary-repository"
+		    "rootDir": "$OUTPUT_DIR"
 		}
 	EOF
 }

@@ -20,9 +20,9 @@ Log into that VM using the "ubuntu" user, and run these commands:
     $ git clone https://github.com/delphix/appliance-build.git
     $ cd appliance-build
     $ ansible-playbook bootstrap/playbook.yml
-    $ PLATFORMS=kvm ./scripts/docker-run.sh make internal-minimal
+    $ ./scripts/docker-run.sh gradle buildInternalMinimalKvm
     $ sudo qemu-system-x86_64 -nographic -m 1G \
-    > -drive file=artifacts/internal-minimal-generic.qcow2
+    > -drive file=live-build/build/artifacts/internal-minimal-kvm.qcow2
 
 To exit "qemu", use "Ctrl-A X".
 
@@ -106,40 +106,36 @@ correcting any deficencies that may exist. This is easily done like so:
 
 Now, with the "bootstrap" VM properly configured, we can run the build:
 
-    $ ./scripts/docker-run.sh make
+    $ ./scripts/docker-run.sh gradle ...
 
 This will create a new container based on the image we previously
-created, and then execute "make" inside of that container.
+created, and then execute "gradle" inside of that container.
 
 The "./scripts/docker-run" script can also be run without any arguments,
 which will provide an interactive shell running in the container
 environment, with the appliance-build git repository mounted inside of
 the container; this can be useful for debugging and/or experimenting.
 
-By default, all "internal" variants will be built when "make" is
-specified without any options. Each variant will have ansible roles
-applied according to playbooks in per variant directories under
-live-build/variants. A specific variant can be built by passing in the
-variant's name:
+Each variant will have ansible roles applied according to playbooks in
+per variant directories under live-build/variants. An appliance can be
+built by invoking the gradle task for the variant and platform desired:
 
-    $ PLATFORMS=kvm ./scripts/docker-run.sh make internal-minimal
-
-Note that by modifying the 'PLATFORMS' environment variable, it is
-possible to build an appliance with a kernel optimized for a different
-platform. The appliance will also contain kernel modules built for
-that optimized kernel, and perhaps some other modules relevant to that
-platform only.
+    $ ./scripts/docker-run.sh gradle buildInternalMinimalKvm
 
 When this completes, the newly built VM artifacts will be contained in
-the "artifacts/" directory:
+the "live-build/build/artifacts/" directory:
 
-    $ ls -lh artifacts/
-    total 3.0G
-    -rw-r--r-- 1 root root   45 Dec  5 22:39 internal-minimal-generic.migration.tar.gz
-    -rw-r--r-- 1 root root 874M Dec  5 22:38 internal-minimal-generic.ova
-    -rw-r--r-- 1 root root 908M Dec  5 22:39 internal-minimal-generic.qcow2
-    -rw-r--r-- 1 root root 874M Dec  5 22:38 internal-minimal-generic.vmdk
-    -rw-r--r-- 1 root root 374M Dec  5 22:38 internal-minimal.upgrade.tar.gz
+    $ ls -lh live-build/build/artifacts/
+    total 1.9G
+    -rw-r--r-- 1 root root 275M Jan 11 22:31 internal-minimal-kvm.debs.tar.gz
+    -rw-r--r-- 1 root root   45 Jan 11 22:31 internal-minimal-kvm.migration.tar.gz
+    -rw-r--r-- 1 root root 636M Jan 11 22:33 internal-minimal-kvm.qcow2
+
+The appliance produced will contain a kernel optimized for the
+specified platform (which can be one of 'aws', 'azure', 'esx', 'gcp',
+or 'kvm'). The appliance will also contain kernel modules built for
+that optimized kernel, and perhaps some other modules relevant to that
+platform only.
 
 ### Step 5: Use QEMU for Boot Verfication
 
@@ -147,7 +143,7 @@ Once the live-build artifacts have been generated, we can then leverage
 the "qemu" tool to test the "qcow2" artifact:
 
     $ sudo qemu-system-x86_64 -nographic -m 1G \
-    > -drive file=artifacts/internal-minimal-generic.qcow2
+    > -drive file=live-build/build/artifacts/internal-minimal-kvm.qcow2
 
 This will attempt to boot the "qcow2" VM image, minimally verifying that
 any changes to the build don't cause a boot failure. Further, after the
@@ -157,6 +153,23 @@ post-boot verification that's required (e.g. verify certain packages are
 installed, etc).
 
 To exit "qemu", one can use "Ctrl-A X".
+
+## Building an Upgrade Image
+
+An upgrade image for a particular variant can be built by running
+
+    $ PLATFORMS='kvm aws' ./scripts/docker-run.sh gradle buildUpgradeImageInternalMinimal
+
+An upgrade image can contain the necessary packages to upgrade
+appliances running on multiple different platforms. Which platforms are
+supported by a particular upgrade image is determined by the list of
+platforms specified in the PLATFORMS environment variable. When the
+build completes, the upgrade image can be found in the "build/artifacts"
+directory:
+
+    $ ls -lh build/artifacts/
+    total 837M
+    -rw-r--r-- 1 root root 837M Jan 11 22:35 internal-minimal.upgrade.tar.gz
 
 ## Creating new build variants
 
@@ -227,4 +240,4 @@ For this example, we add our new role to the playboodk as shown below:
 See the instructions [above](#step-4-run-live-build) to setup your build
 environment and kick off the build:
 
-    $ ./scripts/docker-run.sh make internal-dcenter
+    $ ./scripts/docker-run.sh gradle buildInternalDcenterEsx

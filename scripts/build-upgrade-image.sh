@@ -53,11 +53,12 @@ mkdir debs
 # appliance versions were built (making sure that we built for at least
 # one platform), and build an upgrade image from that.
 #
-if ! compgen -G "$TOP/live-build/artifacts/$APPLIANCE_VARIANT*.debs.tar.gz"; then
+LIVE_BUILD_OUTPUT_DIR="$TOP/live-build/build/artifacts"
+if ! compgen -G "$LIVE_BUILD_OUTPUT_DIR/$APPLIANCE_VARIANT*.debs.tar.gz"; then
 	echo "No live-build artifacts found for this variant" >&2
 	exit 1
 fi
-for deb_tarball in "$TOP/live-build/artifacts/$APPLIANCE_VARIANT"*.debs.tar.gz; do
+for deb_tarball in "$LIVE_BUILD_OUTPUT_DIR/$APPLIANCE_VARIANT"*.debs.tar.gz; do
 	tar xf "$deb_tarball" -C debs
 done
 
@@ -72,4 +73,4 @@ sed "s/@@VERSION@@/$VERSION/" <version.info.template >version.info
 
 tar -czf "$APPLIANCE_VARIANT.upgrade.tar.gz" version.info -C upgrade-scripts . -C ~/.aptly .
 
-mv "$APPLIANCE_VARIANT.upgrade.tar.gz" "$TOP/artifacts"
+mv "$APPLIANCE_VARIANT.upgrade.tar.gz" "$TOP/build/artifacts"

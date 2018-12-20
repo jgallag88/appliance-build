@@ -64,8 +64,7 @@ EOF
 apt_get update || die "failed to update apt sources"
 
 source_version_information
-# TODO pick out correct platform instead of just choosing aws
-apt_get install -y "delphix-entire-aws=$VERSION" ||
+apt_get install -y "delphix-entire-$(get_platform)=$VERSION" ||
 	die "upgrade failed; from '$INSTALLED_VERSION' to '$VERSION'"
 
 if [[ -f /etc/apt/sources.list.orig ]]; then

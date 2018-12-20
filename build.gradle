@@ -1,0 +1,86 @@
+/*
+ * Copyright 2019 Delphix
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+apply plugin: 'base'
+
+apply from: "${rootProject.projectDir}/gradle-lib/util.gradle"
+
+createArtifactsDirTask(this)
+
+for (variant in allVariants) {
+    def taskName = "buildUpgradeImage${toCamelCase(variant).capitalize()}"
+    tasks.create(taskName, Exec) { task ->
+        dependsOn mkArtifactsDir
+
+        if (System.getenv("AWS_S3_URI_LIVEBUILD_ARTIFACTS") != null) {
+            dependsOn ":live-build:fetchLiveBuildArtifacts"
+        } else {
+            for (platform in System.getenv("PLATFORMS")?.trim()?.split()) {
+                def dependentTask = "build" +
+                                    toCamelCase(variant).capitalize() +
+                                    platform.capitalize()
+                dependsOn ":live-build:${dependentTask}"
+            }
+        }
+
+        for (envVar in ["PLATFORMS", "AWS_S3_URI_LIVEBUILD_ARTIFACTS"]) {
+            inputs.property(envVar, System.getenv(envVar)).optional(true)
+        }
+
+        doFirst {
+            if (System.getenv("AWS_S3_URI_LIVEBUILD_ARTIFACTS") == null &&
+                System.getenv("PLATFORMS") == null) {
+
+		throw new GradleException("""
+                Either 'AWS_S3_URI_LIVEBUILD_ARTIFACTS' or 'PLATFORMS' must be defined as an
+                environment variable. Re-run with PLATFORMS set to a space-delimited list of
+                platforms for which to build (e.g 'PLATFORMS="esx aws kvm" gradle ...') or
+                with AWS_S3_URI_LIVEBUILD_ARTIFACTS" set to a space-delimited set of S3 URIs from
+                which to fetch previously built live-build artifacts.
+                """.stripIndent())
+            }
+        }
+
+        commandLine "${rootProject.projectDir}/scripts/build-upgrade-image.sh", "${variant}"
+    }
+}
+
+def shellScripts = fileTree("scripts") +
+                   fileTree("live-build/config/hooks").include({ details ->
+                        details.file.canExecute()
+                   }) +
+                   fileTree("live-build/misc/migration-scripts") +
+                   fileTree("upgrade/upgrade-scripts")
+
+task shfmt(type: Exec) {
+    commandLine(["shfmt", "-w"] + shellScripts.getFiles())
+}
+
+task shfmtCheck(type: Exec) {
+    commandLine(["shfmt", "-d"] + shellScripts.getFiles())
+}
+
+task shellcheck(type: Exec) {
+    commandLine(["shellcheck", "--exclude=SC1090,SC1091"] + shellScripts.getFiles())
+}
+
+task ansibleCheck(type: Exec) {
+    def ansibleFiles = fileTree("bootstrap").include("**/playbook.yml") +
+                       fileTree("live-build/variants").include("**/playbook.yml")
+    commandLine(["ansible-lint", "--exclude=SC1090,SC1091"] + ansibleFiles.getFiles())
+}
+
+tasks.check.dependsOn shellcheck, shfmtCheck, ansibleCheck

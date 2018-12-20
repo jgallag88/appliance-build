@@ -4,6 +4,7 @@ Maintainer: Delphix Engineering <eng@delphix.com>
 Standards-Version: 3.9.2
 
 Package: delphix-entire-@@PLATFORM@@
+Provides: delphix-entire
 Version: @@VERSION@@
 Depends: @@DEPENDS@@
 Description: Entirety of Delphix Appliance (@@VARIANT@@)

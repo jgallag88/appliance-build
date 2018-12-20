@@ -39,8 +39,13 @@ function get_image_version() {
 	basename "$(get_image_path)"
 }
 
+function get_platform() {
+	dpkg-query -Wf '${Package}' 'delphix-entire-*' | \
+		sed 's/delphix-entire-//'
+}
+
 function get_installed_version() {
-	dpkg-query -Wf '${Version}' delphix-entire
+	dpkg-query -Wf '${Version}' "delphix-entire-$(get_platform)"
 }
 
 function compare_versions() {
